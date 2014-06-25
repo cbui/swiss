@@ -1,7 +1,12 @@
 (ns swiss.core
   (:require [clojure.java.shell :refer [sh]]
-            [clojure.string :refer [join]])
+            [clojure.string :refer [join]]
+            [digest :refer [md5]]
+            [clojure.java.io :refer [as-file]])
   (:import com.yahoo.platform.yui.compressor.YUICompressor))
+
+(defn md5-file [file-path]
+  (md5 (as-file file-path)))
 
 (defn- get-current-working-directory []
   (System/getProperty "user.dir"))
@@ -48,3 +53,4 @@
               "-o"
               (str current-working-directory "/" output-file)]]
     (execute-compressor (build-command args))))
+
