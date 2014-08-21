@@ -1,12 +1,6 @@
 (ns swiss.middleware
   (:require [swiss.core :refer :all]))
 
-(defn- concatenate-asset-to-output [asset]
-  "Takes in an asset, which is a map with a :concatenate and
-an :output key. Takes the files to be concatenated and concatenates
-them together, outputting to the :output file."
-  (spit (:output asset) (apply str (map slurp (:concatenate asset)))))
-
 (defn wrap-concatenate-assets [handler {:keys [mode assets] :as options}]
   "Concatenates the assets and passes the request to the handler.
 

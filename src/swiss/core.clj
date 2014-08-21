@@ -54,3 +54,8 @@
               (str current-working-directory "/" output-file)]]
     (execute-compressor (build-command args))))
 
+(defn concatenate-asset-to-output [asset]
+  "Takes in an asset, which is a map with a :concatenate and
+an :output key. Takes the files to be concatenated and concatenates
+them together, outputting to the :output file."
+  (spit (:output asset) (apply str (map slurp (:concatenate asset)))))
