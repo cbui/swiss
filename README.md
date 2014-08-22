@@ -35,6 +35,14 @@ Heavily inspired by Gulp.js.
     (concat "all.min.js")
     (output-to "test/assets/min"))
 
+;; Concatenate javascript, output to a file, compress them, rename it, and then output it to another file.
+(-> (src ["test/assets/test.js" "test/assets/test2.js"])
+    (concat "first.js")
+    (output-to "test/assets/min")
+    (compress-javascript)
+    (rename "first.min.js")
+    (output-to "test/assets/min"))
+
 ;; Just for fun, if you wanted to, you can just copy the assets.
 (-> (src ["test/assets/test.js" "test/assets/test2.js"])
     (output-to "test/assets/copy"))    
@@ -47,9 +55,6 @@ Heavily inspired by Gulp.js.
 * More documentation
 * Caching
 * Watching for changes
-
-### Things I won't implement myself but would gladly accept pull requests for: 
-
 * LESS  
 * SASS
 * Coffeescript
