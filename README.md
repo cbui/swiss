@@ -1,10 +1,21 @@
 # swiss
 
-A Clojure library for concatenating, compressing, and caching javascript and stylesheets.
+A Clojure library for concatenating and compressing, javascript and stylesheets.
+
+Currently a heavy work in progress. API might change a lot. Don't use in production yet. Pull requests welcomed. Ask me before contributing.
 
 ## Usage
 
-FIXME
+```clojure
+(-> (src ["test/assets/test.js" "test/assets/test2.js"])
+    (compress-javascript)
+    (output-to "test/assets"))
+
+(-> (src ["test/assets/test.js" "test/assets/test2.js"])
+    (concat "second.min.js")
+    (compress-javascript)
+    (output-to "test/assets"))
+```
 
 ## License
 
