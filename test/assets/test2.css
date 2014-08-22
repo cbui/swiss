@@ -1,0 +1,10 @@
+body {
+    min-width: 1020px;
+    color: #333333;
+    background-color: #fff;
+}
+
+.wrapper {
+    font: 13px Helvetica, arial, freesans, clean, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol";
+    line-height: 1.4;
+}
