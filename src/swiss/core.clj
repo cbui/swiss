@@ -6,7 +6,7 @@
             [me.raynes.fs :refer [glob]])
   (:import [com.yahoo.platform.yui.compressor JavaScriptCompressor]
            [java.nio.file FileSystems]
-           [java.io InputStreamReader StringReader StringWriter]))
+           [java.io File InputStreamReader StringReader StringWriter]))
 
 (defn- compress-javascript* [input &
                            [{:keys
@@ -41,8 +41,16 @@
 (defn- get-previous-output [swiss-map]
   ((:prev-fn swiss-map) swiss-map))
 
-(defn- read-file [file]
-  {file (slurp file)})
+(defn- current-working-directory []
+  (System/getProperty "user.dir"))
+
+(defn- file-path->file-name [relative-file-path]
+  (let [current-working-directory (current-working-directory)
+        absolute-path (str current-working-directory "/" relative-file-path)]
+    (.getName (File. absolute-path))))
+
+(defn- read-file [file-path]
+  {(file-path->file-name file-path) (slurp file-path)})
 
 (defn src [files]
   {:src (into {} (map read-file files))
@@ -70,13 +78,5 @@
          {:into-file file-path
           :prev-fn :into-file}))
 
-#_(-> (src ["test/assets/test.js" "test/assets/test2.js"])
-    (compress-javascript)
-    (concat "first.min.js")
-    (output-to "test/assets"))
 
-#_(-> (src ["test/assets/test.js" "test/assets/test2.js"])
-    (concat "second.min.js")
-    (compress-javascript)
-    (output-to "test/assets"))
 
