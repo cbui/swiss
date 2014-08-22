@@ -52,9 +52,13 @@
 (defn- read-file [file-path]
   {(file-path->file-name file-path) (slurp file-path)})
 
-(defn src [files]
-  {:src (into {} (map read-file files))
-   :prev-fn :src})
+(defn src
+  ([files]
+     (src {} files))
+  ([swiss-map files]
+     (merge swiss-map
+            {:src (into {} (map read-file files))
+             :prev-fn :src})))
 
 (defn compress-javascript
   ([swiss-map]
@@ -77,6 +81,4 @@
   (merge swiss-map
          {:into-file file-path
           :prev-fn :into-file}))
-
-
 
