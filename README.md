@@ -26,6 +26,15 @@ Heavily inspired by Gulp.js.
     (compress-javascript)
     (output-to "test/assets/min"))
     
+;; That means you can have a folder of individually minified files, then concatenate them all at same time.
+(-> 
+    (src ["test/assets/test.js" "test/assets/test2.js"])
+    (compress-javascript)
+    (output-to "test/assets/min")
+    (src ["test/assets/min/test.js" "test/assets/min/test2.js"])
+    (concat "all.min.js")
+    (output-to "test/assets/min"))
+
 ;; Just for fun, if you wanted to, you can just copy the assets.
 (-> (src ["test/assets/test.js" "test/assets/test2.js"])
     (output-to "test/assets/copy"))    
