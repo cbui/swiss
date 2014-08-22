@@ -58,6 +58,7 @@ Heavily inspired by Gulp.js.
 * LESS  
 * SASS
 * Coffeescript
+* Upload to S3
 
 ## License
 
