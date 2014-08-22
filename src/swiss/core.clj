@@ -6,27 +6,26 @@
             [me.raynes.fs :refer [glob]])
   (:import [com.yahoo.platform.yui.compressor JavaScriptCompressor]
            [java.nio.file FileSystems]
-           [java.io InputStreamReader FileInputStream StringWriter BufferedOutputStream]))
+           [java.io InputStreamReader StringReader StringWriter]))
 
-(defn compress-javascript [input-file &
-                           {:keys
-                            [disable-optimizations?
-                             preserve-semi?
-                             nomunge?
-                             line-break
-                             charset
-                             verbose?]
-                            :or
-                            {disable-optimizations? false
-                             verbose? false
-                             preserve-semi? false
-                             nomunge? false
-                             line-break -1
-                             charset "utf-8"}}]
+(defn- compress-javascript* [input &
+                           [{:keys
+                             [disable-optimizations?
+                              preserve-semi?
+                              nomunge?
+                              line-break
+                              charset
+                              verbose?]
+                             :or
+                             {disable-optimizations? false
+                              verbose? false
+                              preserve-semi? false
+                              nomunge? false
+                              line-break -1
+                              charset "utf-8"}}
+                            :as options]]
   (let [compressor (JavaScriptCompressor.
-                    (InputStreamReader.
-                     (FileInputStream. input-file)
-                     charset)
+                    (StringReader. (last input))
                     nil)
         writer (StringWriter.)]
     (.compress
@@ -37,25 +36,47 @@
      verbose?
      preserve-semi?
      disable-optimizations?)
-    (.toString (.getBuffer writer))))
+    {(first input) (.toString (.getBuffer writer))}))
 
+(defn- get-previous-output [swiss-map]
+  ((:prev-fn swiss-map) swiss-map))
 
-(defn concatenate-asset-to-output [asset]
-  "Takes in an asset, which is a map with a :concatenate and
-an :output key. Takes the files to be concatenated and concatenates
-them together, outputting to the :output file."
-  (spit (:output asset) (apply str (map slurp (:concatenate asset)))))
-
+(defn- read-file [file]
+  {file (slurp file)})
 
 (defn src [files]
-  {:src files})
+  {:src (into {} (map read-file files))
+   :prev-fn :src})
 
-(defn compress-js [swiss-map yui-options]
-  (merge swiss-map {}))
+(defn compress-javascript
+  ([swiss-map]
+     (compress-javascript swiss-map nil))
+  ([swiss-map yui-options]
+     (merge swiss-map
+            {:compress-javascript (into {} (map #(compress-javascript* % yui-options)
+                                                (get-previous-output swiss-map)))
+             :prev-fn :compress-javascript})))
 
-#_(-> (src ["test/assets/test.js" "test/assets/jquery.js"])
-      (uglify)
-      (concat "all.min.js")
-      (output))
+(defn concat [swiss-map file-name]
+  (merge swiss-map
+         {:concat {file-name
+                   (apply str (vals (get-previous-output swiss-map)))}
+          :prev-fn :concat}))
 
-;;(compress-javascript "test/assets/test.js" nil)
+(defn output-to [swiss-map file-path]
+  (doseq [[k v] (get-previous-output swiss-map)]
+    (spit (str file-path "/" k) v))
+  (merge swiss-map
+         {:into-file file-path
+          :prev-fn :into-file}))
+
+#_(-> (src ["test/assets/test.js" "test/assets/test2.js"])
+    (compress-javascript)
+    (concat "first.min.js")
+    (output-to "test/assets"))
+
+#_(-> (src ["test/assets/test.js" "test/assets/test2.js"])
+    (concat "second.min.js")
+    (compress-javascript)
+    (output-to "test/assets"))
+
