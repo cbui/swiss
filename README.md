@@ -36,6 +36,8 @@ Heavily inspired by Gulp.js.
 * Stylesheets
 * Middleware
 * More documentation
+* Caching
+* Watching for changes
 
 ### Things I won't implement myself but would gladly accept pull requests for: 
 
