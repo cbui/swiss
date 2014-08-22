@@ -13,50 +13,51 @@ Heavily inspired by Gulp.js.
 (-> (src ["test/assets/test.js" "test/assets/test2.js"])
     (concat "first.min.js")
     (compress-javascript)
-    (output-to "test/assets/min"))
-
-;; Order doesn't matter! You can compress and then concatenate them
-(-> (src ["test/assets/test.js" "test/assets/test2.js"])
-    (compress-javascript)
-    (concat "second.min.js")
-    (output-to "test/assets/min"))
-    
-;; You don't even have to concatenate them. You can compress them into individual files of the same name in the output directory
-(-> (src ["test/assets/test.js" "test/assets/test2.js"])
-    (compress-javascript)
-    (output-to "test/assets/min"))
-    
-;; That means you can have a folder of individually minified files, then concatenate them all at same time.
-(-> 
-    (src ["test/assets/test.js" "test/assets/test2.js"])
-    (compress-javascript)
-    (output-to "test/assets/min")
-    (src ["test/assets/min/test.js" "test/assets/min/test2.js"])
-    (concat "all.min.js")
-    (output-to "test/assets/min"))
-
-;; Concatenate javascript, output to a file, compress them, rename it, and then output it to another file.
-(-> (src ["test/assets/test.js" "test/assets/test2.js"])
-    (concat "first.js")
-    (output-to "test/assets/min")
-    (compress-javascript)
-    (rename "first.min.js")
-    (output-to "test/assets/min"))
+    (output-to-file "test/assets/min"))
 
 ;; Stylesheets are also supported in the same way.
 (-> (src ["test/assets/test.css" "test/assets/test2.css"])
     (concat "application.min.css")
     (compress-stylesheet)
+    (output-to-file-file "test/assets/min"))
+
+;; Order doesn't matter! You can compress and then concatenate them
+(-> (src ["test/assets/test.js" "test/assets/test2.js"])
+    (compress-javascript)
+    (concat "second.min.js")
+    (output-to-file "test/assets/min"))
+    
+;; You don't even have to concatenate them. You can compress them into individual files of the same name in the output directory
+(-> (src ["test/assets/test.js" "test/assets/test2.js"])
+    (compress-javascript)
+    (output-to-file "test/assets/min"))
+    
+;; That means you can have a folder of individually minified files, then concatenate them all at same time.
+(-> 
+    (src ["test/assets/test.js" "test/assets/test2.js"])
+    (compress-javascript)
+    (output-to-file "test/assets/min")
+    (src ["test/assets/min/test.js" "test/assets/min/test2.js"])
+    (concat "all.min.js")
+    (output-to-file "test/assets/min"))
+
+;; Concatenate javascript, output to a file, compress them, rename it, and then output it to another file.
+(-> (src ["test/assets/test.js" "test/assets/test2.js"])
+    (concat "first.js")
+    (output-to-file "test/assets/min")
+    (compress-javascript)
+    (rename "first.min.js")
     (output-to-file "test/assets/min"))
 
 ;; Just for fun, if you wanted to, you can just copy the assets.
 (-> (src ["test/assets/test.js" "test/assets/test2.js"])
-    (output-to "test/assets/copy"))    
+    (output-to-file "test/assets/copy"))    
 ```
 
 ## Todo
 
 * Middleware
+* "Fingerprinting" 
 * More documentation
 * Caching
 * Watching for changes
