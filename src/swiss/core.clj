@@ -9,21 +9,21 @@
            [java.io File InputStreamReader StringReader StringWriter]))
 
 (defn- compress-javascript* [input &
-                           [{:keys
-                             [disable-optimizations?
-                              preserve-semi?
-                              nomunge?
-                              line-break
-                              charset
-                              verbose?]
-                             :or
-                             {disable-optimizations? false
-                              verbose? false
-                              preserve-semi? false
-                              nomunge? false
-                              line-break -1
-                              charset "utf-8"}}
-                            :as options]]
+                             [{:keys
+                               [disable-optimizations?
+                                preserve-semi?
+                                nomunge?
+                                line-break
+                                charset
+                                verbose?]
+                               :or
+                               {disable-optimizations? false
+                                verbose? false
+                                preserve-semi? false
+                                nomunge? false
+                                line-break -1
+                                charset "utf-8"}}
+                              :as options]]
   (let [compressor (JavaScriptCompressor.
                     (StringReader. (last input))
                     nil)
@@ -76,9 +76,15 @@
           :prev-fn :concat}))
 
 (defn output-to [swiss-map file-path]
-  (doseq [[k v] (get-previous-output swiss-map)]
-    (spit (str file-path "/" k) v))
   (merge swiss-map
-         {:into-file file-path
-          :prev-fn :into-file}))
+         {:output-to (into {} (for [[k v] (get-previous-output swiss-map)]
+                                (do
+                                  (spit (str file-path "/" k) v)
+                                  {k v})))
+          :prev-fn :output-to}))
 
+(defn rename [swiss-map new-file-name]
+  (merge swiss-map
+         {:rename
+          {new-file-name (first (vals (get-previous-output swiss-map)))}
+          :prev-fn :rename}))
