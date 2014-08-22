@@ -31,6 +31,18 @@ Heavily inspired by Gulp.js.
     (output-to "test/assets/copy"))    
 ```
 
+## Todo
+
+* Stylesheets
+* Middleware
+* More documentation
+
+### Things I won't implement myself but would gladly accept pull requests for: 
+
+* LESS  
+* SASS
+* Coffeescript
+
 ## License
 
 Copyright © 2014 Christopher Bui
