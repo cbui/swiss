@@ -152,14 +152,3 @@ one and returns it as a file-map."
           {new-file-name (first (vals (get-previous-output swiss-map)))}
           :prev-fn :rename}))
 
-#_(-> (src ["test/assets/test.js" "test/assets/test2.js"])
-    (concat "first.js")
-    (output-to-file "test/assets/min")
-    (compress-javascript)
-    (output-to-file "test/assets/min"))
-
-
-(-> (src ["test/assets/test.css" "test/assets/test2.css"])
-    (concat "application.min.css")
-    (compress-stylesheet)
-    (output-to-file "test/assets/min"))

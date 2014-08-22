@@ -43,6 +43,12 @@ Heavily inspired by Gulp.js.
     (rename "first.min.js")
     (output-to "test/assets/min"))
 
+;; Stylesheets are also supported in the same way.
+(-> (src ["test/assets/test.css" "test/assets/test2.css"])
+    (concat "application.min.css")
+    (compress-stylesheet)
+    (output-to-file "test/assets/min"))
+
 ;; Just for fun, if you wanted to, you can just copy the assets.
 (-> (src ["test/assets/test.js" "test/assets/test2.js"])
     (output-to "test/assets/copy"))    
@@ -50,7 +56,6 @@ Heavily inspired by Gulp.js.
 
 ## Todo
 
-* Stylesheets
 * Middleware
 * More documentation
 * Caching
@@ -58,6 +63,7 @@ Heavily inspired by Gulp.js.
 * LESS  
 * SASS
 * Coffeescript
+* Upload to S3
 
 ## License
 
