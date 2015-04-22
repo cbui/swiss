@@ -10,6 +10,11 @@
   [file-map]
   (-> file-map vals first))
 
+(defn get-file-extension
+  "Match everything after the first dot to the end."
+  [filename]
+  (first (re-find #"\.(.+)$" filename)))
+
 (defn get-previous-output
   "Returns the return value of the previous function via the
   context."

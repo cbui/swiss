@@ -30,13 +30,14 @@
   (:refer-clojure :exclude [concat])
   (:require [clojure.java.shell :refer [sh]]
             [clojure.string :refer [join]]
-            [digest :refer [md5]]
+            [digest :as d]
             [swiss.util :refer [get-previous-output
                                 current-working-directory
                                 file-path->file-name
                                 read-file
                                 get-filename
-                                get-contents]])
+                                get-contents
+                                get-file-extension]])
   (:import [com.yahoo.platform.yui.compressor CssCompressor JavaScriptCompressor]
            [java.nio.file FileSystems]
            [java.io InputStreamReader StringReader StringWriter]))
@@ -158,17 +159,19 @@
     {filename contents}))
 
 (defn output-to-file
-  "Takes a context with a file-map as its previous output, which is
-  a map of keys consisting of a file's name as a string to its content
-  as a value. Spits it out to the file-path."
-  [context file-path]
-  (merge context
-         {:output-to-file (reduce-kv
-                           (fn [m k v]
-                             (merge m (output-to-file* file-path {k v})))
-                           {}
-                           (get-previous-output context))
-          :prev-fn :output-to-file}))
+  "Takes a context and a file-path to output the previous command
+  to. An optional third argument can be passed in which is a keyword
+  in the context map to use that command's result to output instead."
+  ([context file-path]
+   (output-to-file context file-path (:prev-fn context)))
+  ([context file-path key-to-output]
+   (merge context
+          {:output-to-file (reduce-kv
+                            (fn [m k v]
+                              (merge m (output-to-file* file-path {k v})))
+                            {}
+                            (key-to-output context))
+           :prev-fn :output-to-file})))
 
 (defn rename
   "Renames a file. If there are multiple files, it renames the first
@@ -178,5 +181,21 @@
          {:rename
           {new-file-name (get-contents (get-previous-output context))}
           :prev-fn :rename}))
+
+(defn md5*
+  [file-name file-contents]
+  {(str (d/md5 file-contents)
+        (get-file-extension file-name))
+   file-contents})
+
+(defn md5
+  [context]
+  (merge context
+         {:md5 (reduce-kv
+                (fn [m k v]
+                  (merge m (md5* k v)))
+                {}
+                (get-previous-output context))
+          :prev-fn :md5}))
 
 
