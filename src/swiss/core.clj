@@ -1,18 +1,32 @@
 (ns swiss.core
+  "Core functionality of swiss.
+
+  The functions in this namespace are apart of the asset 'pipeline'
+  process.
+
+  Example usage:
+
+  ;; Concatenate javascript, compress them, and output them
+  (-> (src [\"test/assets/test.js\" \"test/assets/test2.js\"])
+      (concat \"first.min.js\")
+      (compress-javascript)
+      (output-to-file \"test/assets/min\"))
+
+  For more examples, see: https://github.com/Christopher-Bui/swiss
+  "
+  (:refer-clojure :exclude [concat])
   (:require [clojure.java.shell :refer [sh]]
             [clojure.string :refer [join]]
-            [digest :refer [md5]])
+            [digest :refer [md5]]
+            [swiss.util :refer [get-previous-output
+                                current-working-directory
+                                file-path->file-name
+                                read-file
+                                get-filename
+                                get-contents]])
   (:import [com.yahoo.platform.yui.compressor CssCompressor JavaScriptCompressor]
            [java.nio.file FileSystems]
-           [java.io File InputStreamReader StringReader StringWriter]))
-
-(defn get-filename
-  [file-map]
-  (-> file-map keys first))
-
-(defn get-contents
-  [file-map]
-  (-> file-map vals first))
+           [java.io InputStreamReader StringReader StringWriter]))
 
 (defn- compress-javascript*
   "Calls the YUI compressor and returns the compressed js as a string.
@@ -69,31 +83,6 @@
      writer
      line-break)
     {(get-filename file-map) (.toString (.getBuffer writer))}))
-
-(defn- get-previous-output
-  "Returns the return value of the previous function via the
-  context."
-  [context]
-  ((:prev-fn context) context))
-
-(defn- current-working-directory
-  "Returns the directory the project is located in."
-  []
-  (System/getProperty "user.dir"))
-
-(defn- file-path->file-name
-  "Takes a relative-file-path from the project's directory, return the
-  file's name."
-  [relative-file-path]
-  (let [current-working-directory (current-working-directory)
-        absolute-path (str current-working-directory "/" relative-file-path)]
-    (.getName (File. absolute-path))))
-
-(defn- read-file
-  "Takes a file-path as a string and returns a map with the file name
-  as the key, with the file's contents as the value."
-  [file-path]
-  {(file-path->file-name file-path) (slurp file-path)})
 
 (defn src
   "Takes a vector of files as strings to be read in and returned as
@@ -176,3 +165,5 @@
          {:rename
           {new-file-name (get-contents (get-previous-output context))}
           :prev-fn :rename}))
+
+
