@@ -4,6 +4,19 @@
   The functions in this namespace are apart of the asset 'pipeline'
   process.
 
+  A swiss context is just a map with the output of each function as
+  the value of the function's name as a keyword. The prev-fn key's
+  value refers to the prev-fn that was called. The prev-fn is
+  represented as a keyword of the name of the prev-fn.
+
+  For example:
+  {:src \"file1.js\" \"console.log('hello world!');\"
+  :prev-fn :src}
+  
+  The prev-fn allows us to access the result of the previous operation
+  while keeping a map of every single operation that was applied to
+  the context.
+
   Example usage:
 
   ;; Concatenate javascript, compress them, and output them
