@@ -1,18 +1,25 @@
 (ns swiss.core
   (:require [clojure.java.shell :refer [sh]]
             [clojure.string :refer [join]]
-            [digest :refer [md5]]
-            [clojure.java.io :refer [as-file]]
-            [me.raynes.fs :refer [glob]])
+            [digest :refer [md5]])
   (:import [com.yahoo.platform.yui.compressor CssCompressor JavaScriptCompressor]
            [java.nio.file FileSystems]
            [java.io File InputStreamReader StringReader StringWriter]))
 
+(defn get-filename
+  [file-map]
+  (-> file-map keys first))
+
+(defn get-contents
+  [file-map]
+  (-> file-map vals first))
+
 (defn- compress-javascript*
   "Calls the YUI compressor and returns the compressed js as a string.
 
-  Input is a vector with the filename as the first value and file's contents as the second value."
-  [input &
+  file-map is a map with a key of the filename and
+  value being the file's contents."
+  [file-map &
    [{:keys
      [disable-optimizations?
       preserve-semi?
@@ -29,7 +36,7 @@
       charset "utf-8"}}
     :as options]]
   (let [compressor (JavaScriptCompressor.
-                    (StringReader. (last input))
+                    (StringReader. (get-contents file-map))
                     nil)
         writer (StringWriter.)]
     (.compress
@@ -40,13 +47,14 @@
      verbose?
      preserve-semi?
      disable-optimizations?)
-    {(first input) (.toString (.getBuffer writer))}))
+    {(get-filename file-map) (.toString (.getBuffer writer))}))
 
 (defn- compress-stylesheet*
   "Calls the YUI compressor and returns the compressed css as a string.
 
-  Input is a vector with the filename as the first value and file's contents as the second value."
-  [input &
+  file-map is a map with a key of the filename and
+  value being the file's contents."
+  [file-map &
    [{:keys
      [line-break
       charset]
@@ -54,19 +62,19 @@
      {line-break -1
       charset "utf-8"}}
     :as options]]
-  (let [compressor (CssCompressor. (StringReader. (last input)))
+  (let [compressor (CssCompressor. (StringReader. (get-contents file-map)))
         writer (StringWriter.)]
     (.compress
      compressor
      writer
      line-break)
-    {(first input) (.toString (.getBuffer writer))}))
+    {(get-filename file-map) (.toString (.getBuffer writer))}))
 
 (defn- get-previous-output
   "Returns the return value of the previous function via the
-  swiss-map."
-  [swiss-map]
-  ((:prev-fn swiss-map) swiss-map))
+  context."
+  [context]
+  ((:prev-fn context) context))
 
 (defn- current-working-directory
   "Returns the directory the project is located in."
@@ -91,72 +99,80 @@
   "Takes a vector of files as strings to be read in and returned as
   map of the file-name to its content.
 
-  Optionally give it a swiss-map and it'll replae the :src value with
+  Optionally give it a context and it'll replace the :src value with
   the new ones."
   ([files]
    (src {} files))
-  ([swiss-map files]
-   (merge swiss-map
+  ([context files]
+   (merge context
           {:src (into {} (map read-file files))
            :prev-fn :src})))
 
 (defn compress-javascript
-  "Takes a swiss-map and optionally yui compressor options as a map
+  "Takes a context and optionally yui compressor options as a map
   and returns a map of the file-name to its compressed content."
-  ([swiss-map]
-   (compress-javascript swiss-map nil))
-  ([swiss-map yui-options]
-   (merge swiss-map
-          {:compress-javascript (into {} (map #(compress-javascript* % yui-options)
-                                              (get-previous-output swiss-map)))
+  ([context]
+   (compress-javascript context nil))
+  ([context yui-options]
+   (merge context
+          {:compress-javascript (reduce-kv
+                                 (fn [m k v]
+                                   (merge m (compress-javascript* {k v} yui-options)))
+                                 {}
+                                 (get-previous-output context))
            :prev-fn :compress-javascript})))
 
 (defn compress-stylesheet
-  "Takes a swiss-map and optionally yui compressor options as a map
+  "Takes a context and optionally yui compressor options as a map
   and returns a map of the file-name to its compressed content."
-  ([swiss-map]
-   (compress-stylesheet swiss-map nil))
-  ([swiss-map yui-options]
-   (merge swiss-map
-          {:compress-javascript (into {} (map #(compress-stylesheet* % yui-options)
-                                              (get-previous-output swiss-map)))
-           :prev-fn :compress-javascript})))
+  ([context]
+   (compress-stylesheet context nil))
+  ([context yui-options]
+   (merge context
+          {:compress-stylesheet (reduce-kv
+                                 (fn [m k v]
+                                   (merge m (compress-stylesheet* {k v} yui-options)))
+                                 {}
+                                 (get-previous-output context))
+           :prev-fn :compress-stylesheet})))
 
 (defn concat
   "Concatenates the values of the file-map of the previous output and
   returns a map with the concatenated file-name as a key to the new
   concanted content as a value."
-  [swiss-map file-name]
-  (merge swiss-map
+  [context file-name]
+  (merge context
          {:concat {file-name
-                   (apply str (vals (get-previous-output swiss-map)))}
+                   (apply str (vals (get-previous-output context)))}
           :prev-fn :concat}))
 
 (defn- output-to-file*
-  "Takes in a file vector, which is a vector with the first value
-  being the filename and second value being the file's contents."
-  [file-path file-vec]
-  (let [filename (first file-vec)
-        contents (last file-vec)] 
+  "Takes in a file map, which is a map with a key of the filename and
+  value being the file's contents."
+  [file-path file-map]
+  (let [filename (get-filename file-map)
+        contents (get-contents file-map)] 
     (spit (str file-path "/" filename) contents)
     {filename contents}))
 
 (defn output-to-file
-  "Takes a swiss-map with a file-map as its previous output, which is
+  "Takes a context with a file-map as its previous output, which is
   a map of keys consisting of a file's name as a string to its content
   as a value. Spits it out to the file-path."
-  [swiss-map file-path]
-  (merge swiss-map
-         {:output-to-file (into {} (map #(output-to-file* file-path %)
-                                        (get-previous-output swiss-map)))
+  [context file-path]
+  (merge context
+         {:output-to-file (reduce-kv
+                           (fn [m k v]
+                             (merge m (output-to-file* file-path {k v})))
+                           {}
+                           (get-previous-output context))
           :prev-fn :output-to-file}))
 
 (defn rename
   "Renames a file. If there are multiple files, it renames the first
   one and returns it as a file-map."
-  [swiss-map new-file-name]
-  (merge swiss-map
+  [context new-file-name]
+  (merge context
          {:rename
-          {new-file-name (first (vals (get-previous-output swiss-map)))}
+          {new-file-name (get-contents (get-previous-output context))}
           :prev-fn :rename}))
-
